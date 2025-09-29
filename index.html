@@ -4,19 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Telethon 2025 — Dashboard</title>
-
-    <!-- Tailwind (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- React + ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-    <!-- Babel for JSX in-browser (okay for small demo / GH Pages) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
     <style>
-      /* small safe tweak for sticky headers on GH Pages */
       thead.sticky { position: sticky; top: 0; z-index: 10; }
     </style>
   </head>
@@ -30,7 +22,7 @@
       const SHEET_NAME = "Mp";
       const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
-      // refresh interval in ms (user wanted 2-3s) — set to 2000ms (2s)
+      // Auto-refresh interval: 2000 ms (2 seconds)
       const REFRESH_INTERVAL_MS = 2000;
       const UNIT_DIVISOR = 7000;
 
@@ -66,9 +58,9 @@
       function parseCSV(csvText) {
         if (!csvText) return [];
         if (csvText.charCodeAt(0) === 0xfeff) csvText = csvText.slice(1);
-        const lines = splitLines(csvText).filter((l) => l.trim() !== "");
+        const lines = splitLines(csvText).filter(l => l.trim() !== "");
         if (lines.length === 0) return [];
-        const headers = parseCSVLine(lines[0]).map((h) => (h || "").trim());
+        const headers = parseCSVLine(lines[0]).map(h => (h || "").trim());
         const rows = [];
         for (let i = 1; i < lines.length; i++) {
           const values = parseCSVLine(lines[i]);
@@ -110,7 +102,7 @@
             if (!res.ok) throw new Error("Fetch failed: " + res.status);
             const text = await res.text();
             const parsed = parseCSV(text);
-            const normalized = parsed.map((r) => {
+            const normalized = parsed.map(r => {
               const out = { ...r };
               out._amount = 0;
               for (const key of Object.keys(r)) {
@@ -131,13 +123,11 @@
         }
 
         useEffect(() => {
-          // initial load + start background interval
           fetchData();
           timerRef.current = setInterval(fetchData, REFRESH_INTERVAL_MS);
           return () => clearInterval(timerRef.current);
         }, []);
 
-        // build asatiza data
         const asatiza = rows.map((r, i) => {
           const rankRaw = firstMatchingValue(r, ["rank", "rnk"]) || "";
           const rankNum = parseInt((rankRaw + "").replace(/[^0-9]+/g, ""), 10);
@@ -150,9 +140,8 @@
           return { id: `a-${i}`, rank, jamia, ustaz, raqam, unit };
         });
 
-        // jamia aggregates
         const jamiaMap = {};
-        rows.forEach((r) => {
+        rows.forEach(r => {
           let jamiaName = firstMatchingValue(r, ["jamia", "institute", "institution", "madarsa"]) || "";
           if (!jamiaName) {
             const firstKey = Object.keys(r)[0] || "";
@@ -164,17 +153,16 @@
           jamiaMap[jamiaName].totalAmount += isNaN(amount) ? 0 : amount;
           jamiaMap[jamiaName].count += 1;
         });
+
         const jamiaData = Object.values(jamiaMap)
           .map((g, idx) => ({ id: `j-${idx}`, ...g, totalUnit: g.totalAmount / UNIT_DIVISOR }))
           .sort((a, b) => b.totalAmount - a.totalAmount);
 
-        // top-3 asatiza by amount (used if ranks missing)
         const sortedByAmount = [...asatiza].sort((a, b) => b.raqam - a.raqam);
-        const topAsatizaIds = sortedByAmount.slice(0, 3).map((x) => x.id);
+        const topAsatizaIds = sortedByAmount.slice(0, 3).map(x => x.id);
 
-        // helper for position (use rank if present, otherwise top-by-amount)
         function getPos(id) {
-          const byRank = asatiza.filter((x) => x.rank !== null).sort((a, b) => a.rank - b.rank).map((x) => x.id);
+          const byRank = asatiza.filter(x => x.rank !== null).sort((a, b) => a.rank - b.rank).map(x => x.id);
           if (byRank.length >= 3) {
             const p = byRank.indexOf(id);
             return p >= 0 ? p : null;
@@ -202,7 +190,7 @@
             <header className="mb-6">
               <div className="rounded-2xl p-4 bg-white shadow-sm border text-center">
                 <div className="inline-block px-6 py-2 rounded-lg bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 font-extrabold tracking-wider text-2xl">
-                  TELETHON 2025 M.P STATE
+                  TELETHONE 2025 M.P. STATE
                 </div>
               </div>
             </header>
@@ -216,7 +204,7 @@
                   Jamia
                 </button>
               </div>
-              <div className="text-sm text-gray-600">Auto-refresh: every {REFRESH_INTERVAL_MS/1000}s • Last: {lastUpdated ? lastUpdated.toLocaleString() : "—"}</div>
+              <div className="text-sm text-gray-600">Auto-refresh: every {REFRESH_INTERVAL_MS / 1000}s • Last: {lastUpdated ? lastUpdated.toLocaleString() : "—"}</div>
             </div>
 
             {view === "Asatiza" ? (
@@ -327,7 +315,7 @@
               </section>
             )}
 
-            <footer className="mt-6 text-xs text-gray-500">If you upload this as <span className="font-mono">index.html</span> to your repo root and enable GitHub Pages (branch: main), it will be published.</footer>
+            <footer className="mt-6 text-xs text-gray-500">Upload this file as <span className="font-mono">index.html</span> to your repo root and enable GitHub Pages (branch: main).</footer>
           </div>
         );
       }
@@ -336,4 +324,3 @@
     </script>
   </body>
 </html>
-
